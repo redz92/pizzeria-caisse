@@ -42,6 +42,15 @@ export default function ReceiptModal({ order, onClose }: Props) {
             {order.tableNumber && <span>Table {order.tableNumber}</span>}
             {order.customerName && <span>{order.customerName}</span>}
           </div>
+          {order.deliveryAddress && (
+            <div style={{ marginTop: 8, padding: '8px 10px', background: '#f5f5f5', borderRadius: 6, fontSize: 12, color: '#333' }}>
+              <div style={{ fontWeight: 700, marginBottom: 4 }}>🛵 Livraison</div>
+              <div>{order.deliveryAddress.adresse}</div>
+              <div>{order.deliveryAddress.codePostal} {order.deliveryAddress.ville}</div>
+              {order.deliveryAddress.interphone && <div>Interphone : {order.deliveryAddress.interphone}</div>}
+              {order.deliveryAddress.telephone && <div>Tél : {order.deliveryAddress.telephone}</div>}
+            </div>
+          )}
         </div>
 
         <div style={{ borderTop: '1px dashed #ccc', borderBottom: '1px dashed #ccc', paddingBlock: 10, marginBottom: 12 }}>

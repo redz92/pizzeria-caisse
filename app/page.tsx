@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { menuItems, categories } from '../data/menu'
-import { CartItem, Order, OrderStatus, PaymentMethod, OrderType, Category, MenuItem } from '../data/types'
+import { CartItem, Order, OrderStatus, PaymentMethod, OrderType, Category, MenuItem, DeliveryAddress } from '../data/types'
 import { getEffectivePrice } from '../data/utils'
 import PaymentModal from '../components/PaymentModal'
 import ReceiptModal from '../components/ReceiptModal'
@@ -78,7 +78,7 @@ export default function CaissePage() {
     ? menuItems.filter(i => i.name.toLowerCase().includes(search.toLowerCase()))
     : menuItems.filter(i => i.category === activeCategory)
 
-  const handleConfirmPayment = (method: PaymentMethod, type: OrderType, tableNumber: number | undefined, customerName: string, cashGiven: number) => {
+  const handleConfirmPayment = (method: PaymentMethod, type: OrderType, tableNumber: number | undefined, customerName: string, cashGiven: number, deliveryAddress?: DeliveryAddress) => {
     const now = new Date().toISOString()
     const order: Order = {
       id: `${Date.now()}`,
@@ -92,6 +92,7 @@ export default function CaissePage() {
       updatedAt: now,
       tableNumber,
       customerName: customerName || undefined,
+      deliveryAddress,
       cashGiven,
       change: method === 'especes' ? cashGiven - total : 0,
     }

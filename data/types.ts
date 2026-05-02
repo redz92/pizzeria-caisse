@@ -21,6 +21,14 @@ export type OrderStatus = 'en_attente' | 'en_preparation' | 'pret' | 'livre'
 export type OrderType = 'sur_place' | 'a_emporter' | 'livraison'
 export type PaymentMethod = 'especes' | 'carte' | 'cheque'
 
+export interface DeliveryAddress {
+  adresse: string
+  ville: string
+  codePostal: string
+  interphone: string
+  telephone: string
+}
+
 export interface Order {
   id: string
   number: number
@@ -33,6 +41,7 @@ export interface Order {
   updatedAt: string
   tableNumber?: number
   customerName?: string
+  deliveryAddress?: DeliveryAddress
   cashGiven?: number
   change?: number
 }

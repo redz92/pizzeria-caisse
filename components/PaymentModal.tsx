@@ -1,13 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { CartItem, PaymentMethod, OrderType } from '../data/types'
+import { CartItem, PaymentMethod, OrderType, DeliveryAddress } from '../data/types'
 import { getEffectivePrice } from '../data/utils'
 
 interface Props {
   items: CartItem[]
   total: number
-  onConfirm: (method: PaymentMethod, type: OrderType, tableNumber: number | undefined, customerName: string, cashGiven: number) => void
+  onConfirm: (method: PaymentMethod, type: OrderType, tableNumber: number | undefined, customerName: string, cashGiven: number, deliveryAddress?: DeliveryAddress) => void
   onClose: () => void
 }
 
@@ -17,10 +17,21 @@ export default function PaymentModal({ items, total, onConfirm, onClose }: Props
   const [tableNumber, setTableNumber] = useState('')
   const [customerName, setCustomerName] = useState('')
   const [cashGiven, setCashGiven] = useState('')
+  const [adresse, setAdresse] = useState('')
+  const [ville, setVille] = useState('')
+  const [codePostal, setCodePostal] = useState('')
+  const [interphone, setInterphone] = useState('')
+  const [telephone, setTelephone] = useState('')
 
   const cashAmount = parseFloat(cashGiven) || 0
   const change = method === 'especes' ? cashAmount - total : 0
   const canConfirm = method !== 'especes' || cashAmount >= total
+
+  const fieldStyle: React.CSSProperties = {
+    width: '100%', padding: '8px 12px', borderRadius: 8,
+    border: '1px solid var(--border)', background: 'var(--bg)',
+    color: 'var(--text)', fontSize: 14,
+  }
 
   const quickCash = [
     Math.ceil(total),
@@ -102,6 +113,48 @@ export default function PaymentModal({ items, total, onConfirm, onClose }: Props
           )}
         </div>
 
+        {/* Adresse de livraison */}
+        {type === 'livraison' && (
+          <div style={{
+            marginBottom: 16, padding: 14, borderRadius: 10,
+            background: 'var(--surface2)', border: '1px solid var(--border)',
+            display: 'flex', flexDirection: 'column', gap: 10,
+          }}>
+            <div style={{ fontSize: 13, color: 'var(--accent)', fontWeight: 600, marginBottom: 2 }}>🛵 Adresse de livraison</div>
+
+            <div>
+              <label style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4, display: 'block' }}>Adresse</label>
+              <input type="text" value={adresse} onChange={e => setAdresse(e.target.value)}
+                placeholder="Ex: 12 rue de la Paix" style={fieldStyle} />
+            </div>
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <div style={{ flex: 2 }}>
+                <label style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4, display: 'block' }}>Ville</label>
+                <input type="text" value={ville} onChange={e => setVille(e.target.value)}
+                  placeholder="Ex: Paris" style={fieldStyle} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4, display: 'block' }}>Code postal</label>
+                <input type="text" value={codePostal} onChange={e => setCodePostal(e.target.value)}
+                  placeholder="Ex: 75001" style={fieldStyle} />
+              </div>
+            </div>
+
+            <div>
+              <label style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4, display: 'block' }}>Interphone / Code d'accès</label>
+              <input type="text" value={interphone} onChange={e => setInterphone(e.target.value)}
+                placeholder="Ex: B245 ou sonner Dupont" style={fieldStyle} />
+            </div>
+
+            <div>
+              <label style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4, display: 'block' }}>Numéro de téléphone</label>
+              <input type="tel" value={telephone} onChange={e => setTelephone(e.target.value)}
+                placeholder="Ex: 06 12 34 56 78" style={fieldStyle} />
+            </div>
+          </div>
+        )}
+
         {/* Mode de paiement */}
         <div style={{ marginBottom: 16 }}>
           <label style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 8, display: 'block' }}>Mode de paiement</label>
@@ -158,7 +211,13 @@ export default function PaymentModal({ items, total, onConfirm, onClose }: Props
             background: 'var(--surface2)', color: 'var(--muted)', cursor: 'pointer', fontSize: 15,
           }}>Annuler</button>
           <button
-            onClick={() => canConfirm && onConfirm(method, type, tableNumber ? parseInt(tableNumber) : undefined, customerName, cashAmount)}
+            onClick={() => canConfirm && onConfirm(
+              method, type,
+              tableNumber ? parseInt(tableNumber) : undefined,
+              customerName,
+              cashAmount,
+              type === 'livraison' ? { adresse, ville, codePostal, interphone, telephone } : undefined
+            )}
             disabled={!canConfirm}
             style={{
               flex: 2, padding: '12px', borderRadius: 10, border: 'none',
