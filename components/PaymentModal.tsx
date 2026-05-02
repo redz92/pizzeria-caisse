@@ -16,16 +16,14 @@ export default function PaymentModal({ items, total, onConfirm, onClose }: Props
   const [type, setType] = useState<OrderType>('sur_place')
   const [tableNumber, setTableNumber] = useState('')
   const [customerName, setCustomerName] = useState('')
-  const [cashGiven, setCashGiven] = useState('')
+  const [cashGiven] = useState(0)
   const [adresse, setAdresse] = useState('')
   const [ville, setVille] = useState('')
   const [codePostal, setCodePostal] = useState('')
   const [interphone, setInterphone] = useState('')
   const [telephone, setTelephone] = useState('')
 
-  const cashAmount = parseFloat(cashGiven) || 0
-  const change = method === 'especes' ? cashAmount - total : 0
-  const canConfirm = method !== 'especes' || cashAmount >= total
+  const canConfirm = true
 
   const fieldStyle: React.CSSProperties = {
     width: '100%', padding: '8px 12px', borderRadius: 8,
@@ -33,14 +31,7 @@ export default function PaymentModal({ items, total, onConfirm, onClose }: Props
     color: 'var(--text)', fontSize: 14,
   }
 
-  const quickCash = [
-    Math.ceil(total),
-    Math.ceil(total / 5) * 5,
-    Math.ceil(total / 10) * 10,
-    Math.ceil(total / 20) * 20,
-  ].filter((v, i, arr) => arr.indexOf(v) === i && v >= total).slice(0, 4)
-
-  return (
+return (
     <div style={{
       position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100,
@@ -169,40 +160,6 @@ export default function PaymentModal({ items, total, onConfirm, onClose }: Props
           </div>
         </div>
 
-        {/* Rendu monnaie */}
-        {method === 'especes' && (
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 6, display: 'block' }}>Somme remise</label>
-            <input
-              type="number" value={cashGiven} onChange={e => setCashGiven(e.target.value)}
-              placeholder={`Min. ${total.toFixed(2)} €`}
-              style={{
-                width: '100%', padding: '10px 12px', borderRadius: 8,
-                border: `1px solid ${cashAmount > 0 && cashAmount < total ? 'var(--danger)' : 'var(--border)'}`,
-                background: 'var(--surface2)', color: 'var(--text)', fontSize: 16,
-              }}
-            />
-            {/* Raccourcis */}
-            <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-              {quickCash.map(v => (
-                <button key={v} onClick={() => setCashGiven(String(v))} style={{
-                  flex: 1, padding: '6px', borderRadius: 6, border: '1px solid var(--border)',
-                  background: 'var(--surface2)', color: 'var(--text)', cursor: 'pointer', fontSize: 13,
-                }}>{v} €</button>
-              ))}
-            </div>
-            {cashAmount >= total && (
-              <div style={{
-                marginTop: 10, padding: '10px 14px', borderRadius: 8,
-                background: 'rgba(34,197,94,0.15)', border: '1px solid var(--success)',
-                display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: 16,
-              }}>
-                <span>Monnaie à rendre</span>
-                <span style={{ color: 'var(--success)' }}>{change.toFixed(2)} €</span>
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Boutons */}
         <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
