@@ -172,7 +172,7 @@ return (
               method, type,
               tableNumber ? parseInt(tableNumber) : undefined,
               customerName,
-              cashAmount,
+              cashGiven,
               type === 'livraison' ? { adresse, ville, codePostal, interphone, telephone } : undefined
             )}
             disabled={!canConfirm}
