@@ -27,9 +27,9 @@ export default function ReceiptModal({ order, onClose }: Props) {
 
         <div style={{ textAlign: 'center', borderBottom: '2px dashed #ccc', paddingBottom: 14, marginBottom: 14 }}>
           <div style={{ fontSize: 28 }}>🍕</div>
-          <div style={{ fontWeight: 900, fontSize: 20, letterSpacing: 2 }}>PIZZACAISSE</div>
-          <div style={{ fontSize: 12, color: '#666' }}>123 Rue de la Pizza, Paris</div>
-          <div style={{ fontSize: 12, color: '#666' }}>Tél: 01 23 45 67 89</div>
+          <div style={{ fontWeight: 900, fontSize: 20, letterSpacing: 2 }}>FRENCHY PIZZA</div>
+          <div style={{ fontSize: 12, color: '#666' }}>10 Rue de Breteuil, 60360 Crèvecœur-le-Grand</div>
+          <div style={{ fontSize: 12, color: '#666' }}>Tél: 09 81 39 87 71</div>
         </div>
 
         <div style={{ fontSize: 13, marginBottom: 12 }}>
