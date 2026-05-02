@@ -85,7 +85,7 @@ export default function CaissePage() {
       number: getNextNumber(),
       items: cart,
       total,
-      status: 'en_attente' as OrderStatus,
+      status: 'en_preparation' as OrderStatus,
       type,
       paymentMethod: method,
       createdAt: now,

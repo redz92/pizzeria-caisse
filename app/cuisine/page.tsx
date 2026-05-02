@@ -13,7 +13,7 @@ function saveOrders(orders: Order[]) {
 
 const statusConfig: Record<OrderStatus, { label: string; color: string; bg: string; next: OrderStatus | null; nextLabel: string }> = {
   en_attente: { label: 'En attente', color: '#f59e0b', bg: 'rgba(245,158,11,0.15)', next: 'en_preparation', nextLabel: '→ Démarrer' },
-  en_preparation: { label: 'En préparation', color: '#3b82f6', bg: 'rgba(59,130,246,0.15)', next: 'pret', nextLabel: '→ Prêt' },
+  en_preparation: { label: 'En préparation', color: '#3b82f6', bg: 'rgba(59,130,246,0.15)', next: 'pret', nextLabel: '✓ Prêt' },
   pret: { label: 'Prêt', color: '#22c55e', bg: 'rgba(34,197,94,0.15)', next: 'livre', nextLabel: '→ Livré' },
   livre: { label: 'Livré', color: '#6b7280', bg: 'rgba(107,114,128,0.1)', next: null, nextLabel: '' },
 }
@@ -22,7 +22,7 @@ const typeEmoji: Record<string, string> = { sur_place: '🍽️', a_emporter: '�
 
 export default function CuisinePage() {
   const [orders, setOrders] = useState<Order[]>([])
-  const [filter, setFilter] = useState<OrderStatus | 'all'>('en_attente')
+  const [filter, setFilter] = useState<OrderStatus | 'all'>('en_preparation')
 
   const loadOrders = useCallback(() => {
     const all = getOrders()
@@ -43,10 +43,10 @@ export default function CuisinePage() {
     loadOrders()
   }
 
-  const visible = filter === 'all' ? orders : orders.filter(o => o.status === filter)
+  const kitchenOrders = orders.filter(o => o.status !== 'en_attente')
+  const visible = filter === 'all' ? kitchenOrders : kitchenOrders.filter(o => o.status === filter)
 
   const counts = {
-    en_attente: orders.filter(o => o.status === 'en_attente').length,
     en_preparation: orders.filter(o => o.status === 'en_preparation').length,
     pret: orders.filter(o => o.status === 'pret').length,
     livre: orders.filter(o => o.status === 'livre').length,
@@ -70,7 +70,7 @@ export default function CuisinePage() {
         <button onClick={() => setFilter('all')} style={{
           padding: '5px 14px', borderRadius: 20, border: 'none', cursor: 'pointer',
           background: filter === 'all' ? 'var(--accent)' : 'var(--surface2)', color: filter === 'all' ? '#fff' : 'var(--muted)', fontSize: 13,
-        }}>Toutes ({orders.length})</button>
+        }}>Toutes ({kitchenOrders.length})</button>
 
         {(Object.entries(counts) as [OrderStatus, number][]).map(([status, count]) => {
           const cfg = statusConfig[status]
