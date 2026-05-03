@@ -36,7 +36,7 @@ export default function CaissePage() {
   const [formulePizzas, setFormulePizzas] = useState<string[]>([])
 
   const TACO_MEATS = ['Viande hachée', 'Merguez', 'Tenders', 'Émincé de poulet']
-  const FORMULE_PIZZA_COUNT: Record<string, number> = { 'f-duo': 2, 'f-family': 4, 'f-gourmande': 1, 'f-1plus1': 2 }
+  const FORMULE_PIZZA_COUNT: Record<string, number> = { 'f-duo': 2, 'f-family': 4, 'f-gourmande': 1, 'f-1plus1': 2, 'p-dcc': 1 }
   const pizzaList = menuItems.filter(m => m.category === 'pizza')
 
   useEffect(() => {
@@ -322,7 +322,7 @@ export default function CaissePage() {
                 const price = sizeItem.price + size.extra
                 return (
                   <button key={size.label} onClick={() => {
-                    if (sizeItem.category === 'formule') {
+                    if (sizeItem.category === 'formule' || sizeItem.id === 'p-dcc') {
                       setSizeItem(null)
                       openFormulePicker(sizeItem, size.label)
                     } else {
@@ -485,7 +485,9 @@ export default function CaissePage() {
                   <div style={{ fontWeight: 700, fontSize: 17 }}>{formulePicker.menuItem.name}</div>
                   <div style={{ fontSize: 12, color: 'var(--muted)' }}>
                     {formulePicker.size && <span style={{ color: 'var(--accent)', marginRight: 6 }}>{formulePicker.size}</span>}
-                    Choisissez vos {formulePicker.count} {pizzaLabel}
+                    {formulePicker.menuItem.id === 'p-dcc'
+                      ? 'Choisissez la garniture'
+                      : `Choisissez vos ${formulePicker.count} ${pizzaLabel}`}
                   </div>
                 </div>
               </div>
@@ -499,7 +501,7 @@ export default function CaissePage() {
                 {formulePizzas.map((selected, idx) => (
                   <div key={idx}>
                     <label style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4, display: 'block' }}>
-                      Pizza {formulePicker.count > 1 ? `n°${idx + 1}` : ''}
+                      {formulePicker.menuItem.id === 'p-dcc' ? 'Garniture' : `Pizza${formulePicker.count > 1 ? ` n°${idx + 1}` : ''}`}
                     </label>
                     <select
                       value={selected}
