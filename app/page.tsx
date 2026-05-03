@@ -30,6 +30,10 @@ export default function CaissePage() {
   const [todayRevenue, setTodayRevenue] = useState(0)
   const [flashId, setFlashId] = useState<string | null>(null)
   const [sizeItem, setSizeItem] = useState<MenuItem | null>(null)
+  const [tacoSelector, setTacoSelector] = useState<{ menuItem: MenuItem; max: number } | null>(null)
+  const [tacoMeatCounts, setTacoMeatCounts] = useState<Record<string, number>>({})
+
+  const TACO_MEATS = ['Viande hachée', 'Merguez', 'Tenders', 'Émincé de poulet']
 
   useEffect(() => {
     const today = new Date().toDateString()
@@ -42,28 +46,32 @@ export default function CaissePage() {
     const menuItem = menuItems.find(m => m.id === itemId)!
     if (menuItem.sizes && menuItem.sizes.length > 0) {
       setSizeItem(menuItem)
+    } else if (menuItem.category === 'tacos') {
+      const max = itemId === 't-1' ? 1 : itemId === 't-2' ? 2 : 3
+      setTacoMeatCounts({})
+      setTacoSelector({ menuItem, max })
     } else {
       addToCart(itemId, undefined)
     }
   }
 
-  const addToCart = (itemId: string, size: string | undefined) => {
+  const addToCart = (itemId: string, size: string | undefined, notes?: string) => {
     setFlashId(itemId)
     setTimeout(() => setFlashId(null), 300)
     const menuItem = menuItems.find(m => m.id === itemId)!
     setCart(prev => {
-      const existing = prev.find(c => c.menuItem.id === itemId && c.size === size)
+      const existing = prev.find(c => c.menuItem.id === itemId && c.size === size && c.notes === notes)
       if (existing) return prev.map(c =>
-        c.menuItem.id === itemId && c.size === size ? { ...c, quantity: c.quantity + 1 } : c
+        c.menuItem.id === itemId && c.size === size && c.notes === notes ? { ...c, quantity: c.quantity + 1 } : c
       )
-      return [...prev, { menuItem, quantity: 1, size }]
+      return [...prev, { menuItem, quantity: 1, size, notes }]
     })
   }
 
-  const updateQty = (itemId: string, size: string | undefined, delta: number) => {
+  const updateQty = (itemId: string, size: string | undefined, delta: number, notes?: string) => {
     setCart(prev => {
       const updated = prev.map(c =>
-        c.menuItem.id === itemId && c.size === size ? { ...c, quantity: c.quantity + delta } : c
+        c.menuItem.id === itemId && c.size === size && c.notes === notes ? { ...c, quantity: c.quantity + delta } : c
       )
       return updated.filter(c => c.quantity > 0)
     })
@@ -221,18 +229,23 @@ export default function CaissePage() {
                     <div style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {item.menuItem.name}
                     </div>
+                    {item.notes && (
+                      <div style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600, marginTop: 1 }}>
+                        🥩 {item.notes}
+                      </div>
+                    )}
                     <div style={{ fontSize: 12, color: 'var(--muted)' }}>
                       {item.size && <span style={{ color: 'var(--accent)' }}>{item.size} · </span>}
                       {(price * item.quantity).toFixed(2)} €
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <button onClick={() => updateQty(item.menuItem.id, item.size, -1)} style={{
+                    <button onClick={() => updateQty(item.menuItem.id, item.size, -1, item.notes)} style={{
                       width: 24, height: 24, borderRadius: 6, border: '1px solid var(--border)',
                       background: 'var(--surface2)', color: 'var(--text)', cursor: 'pointer', fontSize: 15, lineHeight: 1,
                     }}>−</button>
                     <span style={{ fontSize: 13, fontWeight: 600, minWidth: 16, textAlign: 'center' }}>{item.quantity}</span>
-                    <button onClick={() => updateQty(item.menuItem.id, item.size, 1)} style={{
+                    <button onClick={() => updateQty(item.menuItem.id, item.size, 1, item.notes)} style={{
                       width: 24, height: 24, borderRadius: 6, border: '1px solid var(--border)',
                       background: 'var(--surface2)', color: 'var(--text)', cursor: 'pointer', fontSize: 15, lineHeight: 1,
                     }}>+</button>
@@ -315,6 +328,120 @@ export default function CaissePage() {
           </div>
         </div>
       )}
+
+      {/* Modal sélecteur de viandes tacos */}
+      {tacoSelector && (() => {
+        const totalSelected = Object.values(tacoMeatCounts).reduce((s, n) => s + n, 0)
+        const canAdd = totalSelected === tacoSelector.max
+        return (
+          <div style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50,
+          }} onClick={() => setTacoSelector(null)}>
+            <div style={{
+              background: 'var(--surface)', borderRadius: 16, padding: 24, width: 380,
+              border: '1px solid var(--border)',
+            }} onClick={e => e.stopPropagation()}>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 6 }}>
+                <span style={{ fontSize: 32 }}>{tacoSelector.menuItem.emoji}</span>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 17 }}>{tacoSelector.menuItem.name}</div>
+                  <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+                    Choisissez {tacoSelector.max} viande{tacoSelector.max > 1 ? 's' : ''}
+                  </div>
+                </div>
+              </div>
+
+              {/* Progress */}
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                gap: 6, marginBottom: 16, padding: '6px 12px', borderRadius: 20,
+                background: canAdd ? 'rgba(34,197,94,0.15)' : 'rgba(249,115,22,0.1)',
+                border: `1px solid ${canAdd ? '#22c55e' : 'var(--accent)'}`,
+              }}>
+                {Array.from({ length: tacoSelector.max }).map((_, i) => (
+                  <span key={i} style={{
+                    width: 12, height: 12, borderRadius: '50%',
+                    background: i < totalSelected ? 'var(--accent)' : 'var(--border)',
+                    display: 'inline-block',
+                  }} />
+                ))}
+                <span style={{ fontSize: 13, color: canAdd ? '#22c55e' : 'var(--accent)', fontWeight: 600, marginLeft: 4 }}>
+                  {totalSelected}/{tacoSelector.max}
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+                {TACO_MEATS.map(meat => {
+                  const count = tacoMeatCounts[meat] || 0
+                  const canIncrease = totalSelected < tacoSelector.max
+                  return (
+                    <div key={meat} style={{
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      padding: '10px 14px', borderRadius: 10,
+                      border: `1px solid ${count > 0 ? 'var(--accent)' : 'var(--border)'}`,
+                      background: count > 0 ? 'rgba(249,115,22,0.1)' : 'var(--surface2)',
+                    }}>
+                      <span style={{ fontWeight: count > 0 ? 700 : 400, color: count > 0 ? 'var(--accent)' : 'var(--text)', fontSize: 14 }}>
+                        🥩 {meat}
+                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <button
+                          onClick={() => count > 0 && setTacoMeatCounts(prev => ({ ...prev, [meat]: count - 1 }))}
+                          disabled={count === 0}
+                          style={{
+                            width: 28, height: 28, borderRadius: 8, border: '1px solid var(--border)',
+                            background: count > 0 ? 'var(--surface)' : 'var(--surface2)',
+                            color: count > 0 ? 'var(--text)' : 'var(--border)',
+                            cursor: count > 0 ? 'pointer' : 'not-allowed', fontSize: 16, lineHeight: 1,
+                          }}>−</button>
+                        <span style={{ fontSize: 15, fontWeight: 700, minWidth: 18, textAlign: 'center', color: count > 0 ? 'var(--accent)' : 'var(--muted)' }}>
+                          {count}
+                        </span>
+                        <button
+                          onClick={() => canIncrease && setTacoMeatCounts(prev => ({ ...prev, [meat]: count + 1 }))}
+                          disabled={!canIncrease}
+                          style={{
+                            width: 28, height: 28, borderRadius: 8, border: '1px solid var(--border)',
+                            background: canIncrease ? 'var(--accent)' : 'var(--surface2)',
+                            color: canIncrease ? '#fff' : 'var(--border)',
+                            cursor: canIncrease ? 'pointer' : 'not-allowed', fontSize: 16, lineHeight: 1,
+                          }}>+</button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => setTacoSelector(null)} style={{
+                  flex: 1, padding: '10px', borderRadius: 8, border: '1px solid var(--border)',
+                  background: 'transparent', color: 'var(--muted)', cursor: 'pointer', fontSize: 14,
+                }}>Annuler</button>
+                <button
+                  disabled={!canAdd}
+                  onClick={() => {
+                    if (!canAdd) return
+                    const parts: string[] = []
+                    TACO_MEATS.forEach(meat => {
+                      const c = tacoMeatCounts[meat] || 0
+                      if (c > 0) parts.push(c > 1 ? `${meat} ×${c}` : meat)
+                    })
+                    addToCart(tacoSelector.menuItem.id, undefined, parts.join(', '))
+                    setTacoSelector(null)
+                  }}
+                  style={{
+                    flex: 2, padding: '10px', borderRadius: 8, border: 'none',
+                    background: canAdd ? 'var(--accent)' : 'var(--border)',
+                    color: canAdd ? '#fff' : 'var(--muted)',
+                    cursor: canAdd ? 'pointer' : 'not-allowed',
+                    fontSize: 15, fontWeight: 700,
+                  }}>✓ Ajouter au panier</button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Modals paiement / ticket */}
       {showPayment && (

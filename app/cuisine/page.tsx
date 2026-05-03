@@ -125,12 +125,25 @@ export default function CuisinePage() {
                   {/* Items */}
                   <div style={{ padding: '10px 14px' }}>
                     {order.items.map((item, i) => (
-                      <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
-                        <span style={{ fontSize: 20 }}>{item.menuItem.emoji}</span>
-                        <span style={{ fontSize: 14, fontWeight: 600 }}>{item.quantity}×</span>
-                        <span style={{ fontSize: 14 }}>{item.menuItem.name}</span>
-                        {item.size && <span style={{ fontSize: 12, color: 'var(--muted)' }}>({item.size})</span>}
-                        {item.notes && <span style={{ fontSize: 11, color: 'var(--warning)', marginLeft: 'auto' }}>📝 {item.notes}</span>}
+                      <div key={i} style={{ marginBottom: 8 }}>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                          <span style={{ fontSize: 20 }}>{item.menuItem.emoji}</span>
+                          <span style={{ fontSize: 14, fontWeight: 600 }}>{item.quantity}×</span>
+                          <span style={{ fontSize: 14 }}>{item.menuItem.name}</span>
+                          {item.size && <span style={{ fontSize: 12, color: 'var(--muted)' }}>({item.size})</span>}
+                        </div>
+                        {item.notes && (
+                          <div style={{
+                            marginTop: 4, marginLeft: 28,
+                            padding: '5px 10px', borderRadius: 6,
+                            background: 'rgba(249,115,22,0.15)',
+                            border: '1px solid var(--accent)',
+                            fontSize: 13, fontWeight: 700, color: 'var(--accent)',
+                            display: 'flex', alignItems: 'center', gap: 5,
+                          }}>
+                            🥩 {item.notes}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
