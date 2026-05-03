@@ -141,7 +141,7 @@ export default function CuisinePage() {
                             fontSize: 13, fontWeight: 700, color: 'var(--accent)',
                             display: 'flex', alignItems: 'center', gap: 5,
                           }}>
-                            🥩 {item.notes}
+                            {item.menuItem.category === 'tacos' ? '🥩' : '📝'} {item.notes}
                           </div>
                         )}
                       </div>

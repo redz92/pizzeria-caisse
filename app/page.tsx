@@ -34,10 +34,27 @@ export default function CaissePage() {
   const [tacoMeatCounts, setTacoMeatCounts] = useState<Record<string, number>>({})
   const [formulePicker, setFormulePicker] = useState<{ menuItem: MenuItem; size: string | undefined; count: number } | null>(null)
   const [formulePizzas, setFormulePizzas] = useState<string[]>([])
+  const [customModal, setCustomModal] = useState<{ menuItem: MenuItem; size?: string; prefixNotes?: string } | null>(null)
+  const [customSauce, setCustomSauce] = useState('')
+  const [customRemarks, setCustomRemarks] = useState('')
+  const [showRemarks, setShowRemarks] = useState(false)
+  const [showSupplements, setShowSupplements] = useState(false)
 
   const TACO_MEATS = ['Viande hachée', 'Merguez', 'Tenders', 'Émincé de poulet']
   const FORMULE_PIZZA_COUNT: Record<string, number> = { 'f-duo': 2, 'f-family': 4, 'f-gourmande': 1, 'f-1plus1': 2, 'p-dcc': 1 }
   const pizzaList = menuItems.filter(m => m.category === 'pizza')
+  const SAUCES = ['Sans sauce', 'Ketchup', 'Mayonnaise', 'Algérienne', 'Harissa', 'Samouraï', 'Barbecue', 'Blanche', 'Burger', 'Béarnaise', 'Cocktail', 'Moutarde', 'Andalouse']
+  const SUPPLEMENTS: { label: string; price: number }[] = [] // À compléter
+
+  const CUSTOM_CATEGORIES = ['burger', 'sandwich', 'tacos', 'panini']
+
+  const openCustomModal = (menuItem: MenuItem, size?: string, prefixNotes?: string) => {
+    setCustomSauce('')
+    setCustomRemarks('')
+    setShowRemarks(false)
+    setShowSupplements(false)
+    setCustomModal({ menuItem, size, prefixNotes })
+  }
 
   useEffect(() => {
     const today = new Date().toDateString()
@@ -56,9 +73,9 @@ export default function CaissePage() {
     const menuItem = menuItems.find(m => m.id === itemId)!
     if (menuItem.category === 'formule') {
       if (menuItem.sizes && menuItem.sizes.length > 0) {
-        setSizeItem(menuItem) // taille d'abord, puis pizza picker
+        setSizeItem(menuItem)
       } else {
-        openFormulePicker(menuItem, undefined) // Gourmande : direct pizza picker
+        openFormulePicker(menuItem, undefined)
       }
     } else if (menuItem.sizes && menuItem.sizes.length > 0) {
       setSizeItem(menuItem)
@@ -66,6 +83,8 @@ export default function CaissePage() {
       const max = itemId === 't-1' ? 1 : itemId === 't-2' ? 2 : 3
       setTacoMeatCounts({})
       setTacoSelector({ menuItem, max })
+    } else if (['burger', 'sandwich', 'panini'].includes(menuItem.category)) {
+      openCustomModal(menuItem)
     } else {
       addToCart(itemId, undefined)
     }
@@ -247,7 +266,7 @@ export default function CaissePage() {
                     </div>
                     {item.notes && (
                       <div style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600, marginTop: 1 }}>
-                        🥩 {item.notes}
+                        📝 {item.notes}
                       </div>
                     )}
                     <div style={{ fontSize: 12, color: 'var(--muted)' }}>
@@ -448,8 +467,8 @@ export default function CaissePage() {
                       const c = tacoMeatCounts[meat] || 0
                       if (c > 0) parts.push(c > 1 ? `${meat} ×${c}` : meat)
                     })
-                    addToCart(tacoSelector.menuItem.id, undefined, parts.join(', '))
                     setTacoSelector(null)
+                    openCustomModal(tacoSelector.menuItem, undefined, parts.join(', '))
                   }}
                   style={{
                     flex: 2, padding: '10px', borderRadius: 8, border: 'none',
@@ -562,6 +581,140 @@ export default function CaissePage() {
           </div>
         )
       })()}
+
+      {/* Modal customisation (burger / sandwich / panini / tacos) */}
+      {customModal && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 70,
+        }} onClick={() => setCustomModal(null)}>
+          <div style={{
+            background: 'var(--surface)', borderRadius: 16, padding: 24, width: 420,
+            maxHeight: '88vh', overflow: 'auto', border: '1px solid var(--border)',
+          }} onClick={e => e.stopPropagation()}>
+
+            {/* En-tête */}
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 20 }}>
+              <span style={{ fontSize: 28 }}>{customModal.menuItem.emoji}</span>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 17 }}>{customModal.menuItem.name}</div>
+                {customModal.prefixNotes && (
+                  <div style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 600 }}>🥩 {customModal.prefixNotes}</div>
+                )}
+              </div>
+            </div>
+
+            {/* Sauce */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 8, display: 'block' }}>
+                🥣 Sauce
+              </label>
+              <select
+                value={customSauce}
+                onChange={e => setCustomSauce(e.target.value)}
+                style={{
+                  width: '100%', padding: '10px 12px', borderRadius: 10,
+                  border: `1px solid ${customSauce ? 'var(--accent)' : 'var(--border)'}`,
+                  background: customSauce ? 'rgba(249,115,22,0.08)' : 'var(--surface2)',
+                  color: customSauce ? 'var(--text)' : 'var(--muted)',
+                  fontSize: 14, cursor: 'pointer',
+                }}
+              >
+                <option value="">— Pas de préférence —</option>
+                {SAUCES.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+
+            {/* Remarques */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 8 }}>📝 Remarques ?</div>
+              <div style={{ display: 'flex', gap: 8, marginBottom: showRemarks ? 10 : 0 }}>
+                {[['Oui', true], ['Non', false]].map(([label, val]) => (
+                  <button key={String(label)} onClick={() => setShowRemarks(val as boolean)} style={{
+                    flex: 1, padding: '8px', borderRadius: 8,
+                    border: `1px solid ${showRemarks === val ? 'var(--accent)' : 'var(--border)'}`,
+                    background: showRemarks === val ? 'rgba(249,115,22,0.15)' : 'var(--surface2)',
+                    color: showRemarks === val ? 'var(--accent)' : 'var(--muted)',
+                    cursor: 'pointer', fontWeight: showRemarks === val ? 700 : 400, fontSize: 14,
+                  }}>{label as string}</button>
+                ))}
+              </div>
+              {showRemarks && (
+                <textarea
+                  value={customRemarks}
+                  onChange={e => setCustomRemarks(e.target.value)}
+                  placeholder="Ex: sans tomates, extra fromage..."
+                  rows={2}
+                  style={{
+                    width: '100%', padding: '10px 12px', borderRadius: 10,
+                    border: '1px solid var(--accent)', background: 'var(--surface2)',
+                    color: 'var(--text)', fontSize: 14, resize: 'none', boxSizing: 'border-box',
+                  }}
+                />
+              )}
+            </div>
+
+            {/* Suppléments */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 8 }}>➕ Suppléments ?</div>
+              <div style={{ display: 'flex', gap: 8, marginBottom: showSupplements ? 10 : 0 }}>
+                {[['Oui', true], ['Non', false]].map(([label, val]) => (
+                  <button key={String(label)} onClick={() => setShowSupplements(val as boolean)} style={{
+                    flex: 1, padding: '8px', borderRadius: 8,
+                    border: `1px solid ${showSupplements === val ? 'var(--accent)' : 'var(--border)'}`,
+                    background: showSupplements === val ? 'rgba(249,115,22,0.15)' : 'var(--surface2)',
+                    color: showSupplements === val ? 'var(--accent)' : 'var(--muted)',
+                    cursor: 'pointer', fontWeight: showSupplements === val ? 700 : 400, fontSize: 14,
+                  }}>{label as string}</button>
+                ))}
+              </div>
+              {showSupplements && (
+                SUPPLEMENTS.length === 0 ? (
+                  <div style={{
+                    padding: '12px', borderRadius: 10, background: 'var(--surface2)',
+                    border: '1px dashed var(--border)', color: 'var(--muted)', fontSize: 13, textAlign: 'center',
+                  }}>
+                    Liste des suppléments à configurer
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {SUPPLEMENTS.map(sup => (
+                      <div key={sup.label} style={{
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        padding: '10px 14px', borderRadius: 10, border: '1px solid var(--border)',
+                        background: 'var(--surface2)',
+                      }}>
+                        <span style={{ fontSize: 14 }}>{sup.label}</span>
+                        <span style={{ fontSize: 13, color: 'var(--accent)', fontWeight: 700 }}>+{sup.price.toFixed(2)} €</span>
+                      </div>
+                    ))}
+                  </div>
+                )
+              )}
+            </div>
+
+            {/* Boutons */}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => setCustomModal(null)} style={{
+                flex: 1, padding: '10px', borderRadius: 8, border: '1px solid var(--border)',
+                background: 'transparent', color: 'var(--muted)', cursor: 'pointer', fontSize: 14,
+              }}>Annuler</button>
+              <button onClick={() => {
+                const parts: string[] = []
+                if (customModal.prefixNotes) parts.push(customModal.prefixNotes)
+                if (customSauce) parts.push(`Sauce: ${customSauce}`)
+                if (showRemarks && customRemarks.trim()) parts.push(customRemarks.trim())
+                addToCart(customModal.menuItem.id, customModal.size, parts.length ? parts.join(' | ') : undefined)
+                setCustomModal(null)
+              }} style={{
+                flex: 2, padding: '10px', borderRadius: 8, border: 'none',
+                background: 'var(--accent)', color: '#fff',
+                cursor: 'pointer', fontSize: 15, fontWeight: 700,
+              }}>✓ Ajouter au panier</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modals paiement / ticket */}
       {showPayment && (
