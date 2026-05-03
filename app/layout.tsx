@@ -16,7 +16,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="fr">
       <head>
-        <title>PizzaCaisse — Logiciel de caisse</title>
+        <title>Frenchy Pizza — Logiciel de caisse</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
       <body>
@@ -34,7 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <span style={{ fontSize: 24 }}>🍕</span>
-              <span style={{ fontWeight: 700, fontSize: 18, color: 'var(--accent)' }}>PizzaCaisse</span>
+              <span style={{ fontWeight: 700, fontSize: 18, color: 'var(--accent)' }}>Frenchy Pizza</span>
             </div>
             <nav style={{ display: 'flex', gap: 4 }}>
               {navLinks.map(link => (
