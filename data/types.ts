@@ -1,4 +1,4 @@
-export type Category = 'pizza' | 'burger' | 'tacos' | 'salade' | 'tapas' | 'panini' | 'sandwich' | 'frite' | 'boisson' | 'dessert'
+export type Category = 'pizza' | 'burger' | 'tacos' | 'salade' | 'tapas' | 'panini' | 'sandwich' | 'frite' | 'boisson' | 'dessert' | 'formule'
 
 export interface MenuItem {
   id: string

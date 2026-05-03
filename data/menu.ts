@@ -795,9 +795,57 @@ export const menuItems: MenuItem[] = [
     emoji: '🥛',
     description: 'Oreo, Nutella ou M&M\'s — fait maison',
   },
+
+  // ── Formules ──────────────────────────────────────────────────────────────
+  {
+    id: 'f-duo',
+    name: 'Formule Duo',
+    category: 'formule',
+    price: 25,
+    emoji: '🍕🍕',
+    description: '2 pizzas au choix + 1 bouteille 1,5L',
+    sizes: [
+      { label: 'Sénior', extra: 0 },
+      { label: 'Méga',   extra: 10 },
+    ],
+  },
+  {
+    id: 'f-family',
+    name: 'Formule Family',
+    category: 'formule',
+    price: 45,
+    emoji: '🍕🍕🍕🍕',
+    description: '4 pizzas au choix + 2 bouteilles 1,5L',
+    sizes: [
+      { label: 'Sénior', extra: 0 },
+      { label: 'Méga',   extra: 20 },
+    ],
+  },
+  {
+    id: 'f-gourmande',
+    name: 'Formule Gourmande',
+    category: 'formule',
+    price: 27,
+    emoji: '🍕🥤🍮',
+    description: '1 pizza Méga au choix + 1 bouteille 1,5L + 1 tiramisu',
+  },
+  {
+    id: 'f-1plus1',
+    name: 'Formule 1+1',
+    category: 'formule',
+    price: 19.50,
+    emoji: '🍕✌️',
+    description: '1 pizza achetée, la 2e à moitié prix — uniquement sur place',
+    sizes: [
+      { label: 'Sénior', extra: 0 },
+      { label: 'Méga',   extra: 12 },
+      { label: 'Giga',   extra: 24 },
+    ],
+  },
 ]
 
 export const categories = [
+  { id: 'formule',  label: 'Formules',  emoji: '⭐' },
   { id: 'pizza',    label: 'Pizzas',    emoji: '🍕' },
   { id: 'burger',   label: 'Burgers',   emoji: '🍔' },
   { id: 'tacos',    label: 'Tacos',     emoji: '🌮' },
