@@ -32,8 +32,12 @@ export default function CaissePage() {
   const [sizeItem, setSizeItem] = useState<MenuItem | null>(null)
   const [tacoSelector, setTacoSelector] = useState<{ menuItem: MenuItem; max: number } | null>(null)
   const [tacoMeatCounts, setTacoMeatCounts] = useState<Record<string, number>>({})
+  const [formulePicker, setFormulePicker] = useState<{ menuItem: MenuItem; size: string | undefined; count: number } | null>(null)
+  const [formulePizzas, setFormulePizzas] = useState<string[]>([])
 
   const TACO_MEATS = ['Viande hachée', 'Merguez', 'Tenders', 'Émincé de poulet']
+  const FORMULE_PIZZA_COUNT: Record<string, number> = { 'f-duo': 2, 'f-family': 4, 'f-gourmande': 1, 'f-1plus1': 2 }
+  const pizzaList = menuItems.filter(m => m.category === 'pizza')
 
   useEffect(() => {
     const today = new Date().toDateString()
@@ -42,9 +46,21 @@ export default function CaissePage() {
     setTodayRevenue(orders.reduce((s, o) => s + o.total, 0))
   }, [lastOrder])
 
+  const openFormulePicker = (menuItem: MenuItem, size: string | undefined) => {
+    const count = FORMULE_PIZZA_COUNT[menuItem.id] || 1
+    setFormulePizzas(Array(count).fill(''))
+    setFormulePicker({ menuItem, size, count })
+  }
+
   const handleMenuClick = (itemId: string) => {
     const menuItem = menuItems.find(m => m.id === itemId)!
-    if (menuItem.sizes && menuItem.sizes.length > 0) {
+    if (menuItem.category === 'formule') {
+      if (menuItem.sizes && menuItem.sizes.length > 0) {
+        setSizeItem(menuItem) // taille d'abord, puis pizza picker
+      } else {
+        openFormulePicker(menuItem, undefined) // Gourmande : direct pizza picker
+      }
+    } else if (menuItem.sizes && menuItem.sizes.length > 0) {
       setSizeItem(menuItem)
     } else if (menuItem.category === 'tacos') {
       const max = itemId === 't-1' ? 1 : itemId === 't-2' ? 2 : 3
@@ -306,8 +322,13 @@ export default function CaissePage() {
                 const price = sizeItem.price + size.extra
                 return (
                   <button key={size.label} onClick={() => {
-                    addToCart(sizeItem.id, size.label)
-                    setSizeItem(null)
+                    if (sizeItem.category === 'formule') {
+                      setSizeItem(null)
+                      openFormulePicker(sizeItem, size.label)
+                    } else {
+                      addToCart(sizeItem.id, size.label)
+                      setSizeItem(null)
+                    }
                   }} style={{
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                     padding: '12px 16px', borderRadius: 10,
@@ -435,6 +456,103 @@ export default function CaissePage() {
                     background: canAdd ? 'var(--accent)' : 'var(--border)',
                     color: canAdd ? '#fff' : 'var(--muted)',
                     cursor: canAdd ? 'pointer' : 'not-allowed',
+                    fontSize: 15, fontWeight: 700,
+                  }}>✓ Ajouter au panier</button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* Modal sélecteur de pizzas pour formules */}
+      {formulePicker && (() => {
+        const allFilled = formulePizzas.every(p => p !== '')
+        const pizzaLabel = formulePicker.count === 1 ? 'pizza' : 'pizzas'
+        return (
+          <div style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60,
+          }} onClick={() => setFormulePicker(null)}>
+            <div style={{
+              background: 'var(--surface)', borderRadius: 16, padding: 24, width: 420,
+              maxHeight: '85vh', overflow: 'auto', border: '1px solid var(--border)',
+            }} onClick={e => e.stopPropagation()}>
+
+              {/* En-tête */}
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 6 }}>
+                <span style={{ fontSize: 28 }}>🍕</span>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 17 }}>{formulePicker.menuItem.name}</div>
+                  <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+                    {formulePicker.size && <span style={{ color: 'var(--accent)', marginRight: 6 }}>{formulePicker.size}</span>}
+                    Choisissez vos {formulePicker.count} {pizzaLabel}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16, paddingLeft: 4 }}>
+                {formulePicker.menuItem.description}
+              </div>
+
+              {/* Slots de sélection */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+                {formulePizzas.map((selected, idx) => (
+                  <div key={idx}>
+                    <label style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4, display: 'block' }}>
+                      Pizza {formulePicker.count > 1 ? `n°${idx + 1}` : ''}
+                    </label>
+                    <select
+                      value={selected}
+                      onChange={e => {
+                        const next = [...formulePizzas]
+                        next[idx] = e.target.value
+                        setFormulePizzas(next)
+                      }}
+                      style={{
+                        width: '100%', padding: '10px 12px', borderRadius: 10,
+                        border: `1px solid ${selected ? 'var(--accent)' : 'var(--border)'}`,
+                        background: selected ? 'rgba(249,115,22,0.08)' : 'var(--surface2)',
+                        color: selected ? 'var(--text)' : 'var(--muted)',
+                        fontSize: 14, cursor: 'pointer', appearance: 'auto',
+                      }}
+                    >
+                      <option value="">— Choisir une pizza —</option>
+                      {pizzaList.map(pizza => (
+                        <option key={pizza.id} value={pizza.name}>{pizza.emoji} {pizza.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+              </div>
+
+              {/* Résumé sélection */}
+              {allFilled && (
+                <div style={{
+                  padding: '10px 14px', borderRadius: 10, marginBottom: 16,
+                  background: 'rgba(34,197,94,0.1)', border: '1px solid #22c55e',
+                  fontSize: 13, color: '#22c55e', fontWeight: 600,
+                }}>
+                  ✓ {formulePizzas.join(' · ')}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => setFormulePicker(null)} style={{
+                  flex: 1, padding: '10px', borderRadius: 8, border: '1px solid var(--border)',
+                  background: 'transparent', color: 'var(--muted)', cursor: 'pointer', fontSize: 14,
+                }}>Annuler</button>
+                <button
+                  disabled={!allFilled}
+                  onClick={() => {
+                    if (!allFilled) return
+                    addToCart(formulePicker.menuItem.id, formulePicker.size, formulePizzas.join(', '))
+                    setFormulePicker(null)
+                  }}
+                  style={{
+                    flex: 2, padding: '10px', borderRadius: 8, border: 'none',
+                    background: allFilled ? 'var(--accent)' : 'var(--border)',
+                    color: allFilled ? '#fff' : 'var(--muted)',
+                    cursor: allFilled ? 'pointer' : 'not-allowed',
                     fontSize: 15, fontWeight: 700,
                   }}>✓ Ajouter au panier</button>
               </div>
