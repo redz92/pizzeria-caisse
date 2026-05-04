@@ -2,14 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { Order, OrderStatus } from '../../data/types'
-
-function getOrders(): Order[] {
-  if (typeof window === 'undefined') return []
-  try { return JSON.parse(localStorage.getItem('pizzeria_orders') || '[]') } catch { return [] }
-}
-function saveOrders(orders: Order[]) {
-  localStorage.setItem('pizzeria_orders', JSON.stringify(orders))
-}
+import { dbGetTodayOrders, dbUpdateOrderStatus } from '../../lib/db'
 
 const statusConfig: Record<OrderStatus, { label: string; color: string; bg: string; next: OrderStatus | null; nextLabel: string }> = {
   en_attente: { label: 'En attente', color: '#f59e0b', bg: 'rgba(245,158,11,0.15)', next: 'en_preparation', nextLabel: '→ Démarrer' },
@@ -24,10 +17,13 @@ export default function CuisinePage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [filter, setFilter] = useState<OrderStatus | 'all'>('en_preparation')
 
-  const loadOrders = useCallback(() => {
-    const all = getOrders()
-    const today = new Date().toDateString()
-    setOrders(all.filter(o => new Date(o.createdAt).toDateString() === today).reverse())
+  const loadOrders = useCallback(async () => {
+    try {
+      const orders = await dbGetTodayOrders()
+      setOrders(orders)
+    } catch (err) {
+      console.error('Erreur chargement commandes:', err)
+    }
   }, [])
 
   useEffect(() => {
@@ -36,11 +32,13 @@ export default function CuisinePage() {
     return () => clearInterval(interval)
   }, [loadOrders])
 
-  const updateStatus = (orderId: string, newStatus: OrderStatus) => {
-    const all = getOrders()
-    const updated = all.map(o => o.id === orderId ? { ...o, status: newStatus, updatedAt: new Date().toISOString() } : o)
-    saveOrders(updated)
-    loadOrders()
+  const updateStatus = async (orderId: string, newStatus: OrderStatus) => {
+    try {
+      await dbUpdateOrderStatus(orderId, newStatus)
+      await loadOrders()
+    } catch (err) {
+      console.error('Erreur mise à jour statut:', err)
+    }
   }
 
   const kitchenOrders = orders.filter(o => o.status !== 'en_attente')

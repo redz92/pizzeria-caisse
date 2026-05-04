@@ -3,11 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Order, OrderStatus } from '../../data/types'
 import ReceiptModal from '../../components/ReceiptModal'
-
-function getOrders(): Order[] {
-  if (typeof window === 'undefined') return []
-  try { return JSON.parse(localStorage.getItem('pizzeria_orders') || '[]') } catch { return [] }
-}
+import { dbGetAllOrders, dbGetOrdersSince } from '../../lib/db'
 
 const statusConfig: Record<OrderStatus, { label: string; color: string }> = {
   en_attente: { label: 'En attente', color: '#f59e0b' },
@@ -22,21 +18,35 @@ export default function HistoriquePage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [dateFilter, setDateFilter] = useState<'today' | 'week' | 'all'>('today')
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    setOrders(getOrders().reverse())
-  }, [])
-
-  const filtered = orders.filter(o => {
-    const d = new Date(o.createdAt)
-    const now = new Date()
-    if (dateFilter === 'today') return d.toDateString() === now.toDateString()
-    if (dateFilter === 'week') {
-      const week = new Date(now); week.setDate(now.getDate() - 7)
-      return d >= week
+    const load = async () => {
+      setLoading(true)
+      try {
+        let data: Order[]
+        if (dateFilter === 'all') {
+          data = await dbGetAllOrders()
+        } else if (dateFilter === 'week') {
+          const week = new Date()
+          week.setDate(week.getDate() - 7)
+          data = await dbGetOrdersSince(week)
+        } else {
+          const today = new Date()
+          today.setHours(0, 0, 0, 0)
+          data = await dbGetOrdersSince(today)
+        }
+        setOrders(data)
+      } catch (err) {
+        console.error('Erreur chargement historique:', err)
+      } finally {
+        setLoading(false)
+      }
     }
-    return true
-  })
+    load()
+  }, [dateFilter])
+
+  const filtered = orders
 
   const totalRevenue = filtered.reduce((s, o) => s + o.total, 0)
   const avgTicket = filtered.length ? totalRevenue / filtered.length : 0
@@ -124,7 +134,9 @@ export default function HistoriquePage() {
           <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', fontWeight: 700, fontSize: 14 }}>
             📋 Détail des commandes ({filtered.length})
           </div>
-          {filtered.length === 0 ? (
+          {loading ? (
+            <div style={{ padding: 24, textAlign: 'center', color: 'var(--muted)' }}>Chargement...</div>
+          ) : filtered.length === 0 ? (
             <div style={{ padding: 24, textAlign: 'center', color: 'var(--muted)' }}>Aucune commande pour cette période</div>
           ) : (
             <div style={{ overflowX: 'auto' }}>

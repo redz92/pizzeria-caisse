@@ -6,19 +6,7 @@ import { CartItem, Order, OrderStatus, PaymentMethod, OrderType, Category, MenuI
 import { getEffectivePrice } from '../data/utils'
 import PaymentModal from '../components/PaymentModal'
 import ReceiptModal from '../components/ReceiptModal'
-
-function getOrders(): Order[] {
-  if (typeof window === 'undefined') return []
-  try { return JSON.parse(localStorage.getItem('pizzeria_orders') || '[]') } catch { return [] }
-}
-function saveOrders(orders: Order[]) {
-  localStorage.setItem('pizzeria_orders', JSON.stringify(orders))
-}
-function getNextNumber(): number {
-  const orders = getOrders()
-  if (!orders.length) return 1
-  return Math.max(...orders.map(o => o.number)) + 1
-}
+import { dbSaveOrder, dbGetTodayOrders, dbGetNextOrderNumber } from '../lib/db'
 
 export default function CaissePage() {
   const [cart, setCart] = useState<CartItem[]>([])
@@ -57,10 +45,10 @@ export default function CaissePage() {
   }
 
   useEffect(() => {
-    const today = new Date().toDateString()
-    const orders = getOrders().filter(o => new Date(o.createdAt).toDateString() === today)
-    setTodayCount(orders.length)
-    setTodayRevenue(orders.reduce((s, o) => s + o.total, 0))
+    dbGetTodayOrders().then(orders => {
+      setTodayCount(orders.length)
+      setTodayRevenue(orders.reduce((s, o) => s + o.total, 0))
+    }).catch(console.error)
   }, [lastOrder])
 
   const openFormulePicker = (menuItem: MenuItem, size: string | undefined) => {
@@ -121,11 +109,12 @@ export default function CaissePage() {
     ? menuItems.filter(i => i.name.toLowerCase().includes(search.toLowerCase()))
     : menuItems.filter(i => i.category === activeCategory)
 
-  const handleConfirmPayment = (method: PaymentMethod, type: OrderType, tableNumber: number | undefined, customerName: string, cashGiven: number, deliveryAddress?: DeliveryAddress) => {
+  const handleConfirmPayment = async (method: PaymentMethod, type: OrderType, tableNumber: number | undefined, customerName: string, cashGiven: number, deliveryAddress?: DeliveryAddress) => {
     const now = new Date().toISOString()
+    const number = await dbGetNextOrderNumber()
     const order: Order = {
       id: `${Date.now()}`,
-      number: getNextNumber(),
+      number,
       items: cart,
       total,
       status: 'en_preparation' as OrderStatus,
@@ -139,9 +128,7 @@ export default function CaissePage() {
       cashGiven,
       change: method === 'especes' ? cashGiven - total : 0,
     }
-    const orders = getOrders()
-    orders.push(order)
-    saveOrders(orders)
+    await dbSaveOrder(order)
     setLastOrder(order)
     setCart([])
     setShowPayment(false)
