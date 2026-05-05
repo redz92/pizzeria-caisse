@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import { Order } from '../data/types'
+import { Order, Client } from '../data/types'
 
 // Conversion DB (snake_case) → Order (camelCase)
 function fromDb(row: Record<string, unknown>): Order {
@@ -93,4 +93,61 @@ export async function dbGetNextOrderNumber(): Promise<number> {
     .limit(1)
   if (error || !data || data.length === 0) return 1
   return (data[0].number as number) + 1
+}
+
+// ── Clients ───────────────────────────────────────────────────────────────
+
+function clientFromDb(row: Record<string, unknown>): Client {
+  return {
+    id: row.id as string,
+    name: (row.name as string) || '',
+    phone: (row.phone as string) || '',
+    adresse: (row.adresse as string) || '',
+    ville: (row.ville as string) || '',
+    codePostal: (row.code_postal as string) || '',
+    interphone: (row.interphone as string) || '',
+    createdAt: row.created_at as string,
+    updatedAt: row.updated_at as string,
+  }
+}
+
+export async function dbGetAllClients(): Promise<Client[]> {
+  const { data, error } = await supabase
+    .from('clients')
+    .select('*')
+    .order('name', { ascending: true })
+  if (error) throw error
+  return (data || []).map(clientFromDb)
+}
+
+export async function dbFindClientByPhone(phone: string): Promise<Client | null> {
+  const normalized = phone.replace(/\s/g, '')
+  if (normalized.length < 6) return null
+  const { data, error } = await supabase
+    .from('clients')
+    .select('*')
+    .ilike('phone', `%${normalized}%`)
+    .limit(1)
+  if (error || !data || data.length === 0) return null
+  return clientFromDb(data[0])
+}
+
+export async function dbUpsertClient(client: Omit<Client, 'createdAt' | 'updatedAt'>): Promise<void> {
+  const now = new Date().toISOString()
+  const { error } = await supabase.from('clients').upsert({
+    id: client.id,
+    name: client.name,
+    phone: client.phone.replace(/\s/g, ''),
+    adresse: client.adresse,
+    ville: client.ville,
+    code_postal: client.codePostal,
+    interphone: client.interphone,
+    updated_at: now,
+  }, { onConflict: 'id' })
+  if (error) throw error
+}
+
+export async function dbDeleteClient(id: string): Promise<void> {
+  const { error } = await supabase.from('clients').delete().eq('id', id)
+  if (error) throw error
 }

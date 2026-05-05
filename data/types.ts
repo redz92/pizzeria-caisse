@@ -29,6 +29,18 @@ export interface DeliveryAddress {
   telephone: string
 }
 
+export interface Client {
+  id: string
+  name: string
+  phone: string
+  adresse: string
+  ville: string
+  codePostal: string
+  interphone: string
+  createdAt: string
+  updatedAt: string
+}
+
 export interface Order {
   id: string
   number: number

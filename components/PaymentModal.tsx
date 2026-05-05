@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { CartItem, PaymentMethod, OrderType, DeliveryAddress } from '../data/types'
+import { useState, useEffect, useRef } from 'react'
+import { CartItem, PaymentMethod, OrderType, DeliveryAddress, Client } from '../data/types'
 import { getEffectivePrice } from '../data/utils'
+import { dbFindClientByPhone } from '../lib/db'
 
 interface Props {
   items: CartItem[]
@@ -22,6 +23,28 @@ export default function PaymentModal({ items, total, onConfirm, onClose }: Props
   const [codePostal, setCodePostal] = useState('')
   const [interphone, setInterphone] = useState('')
   const [telephone, setTelephone] = useState('')
+  const [foundClient, setFoundClient] = useState<Client | null>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Recherche client au téléphone (livraison seulement)
+  useEffect(() => {
+    if (type !== 'livraison') { setFoundClient(null); return }
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(async () => {
+      const client = await dbFindClientByPhone(telephone)
+      setFoundClient(client)
+    }, 500)
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+  }, [telephone, type])
+
+  const fillFromClient = (client: Client) => {
+    setAdresse(client.adresse)
+    setVille(client.ville)
+    setCodePostal(client.codePostal)
+    setInterphone(client.interphone)
+    if (client.name) setCustomerName(client.name)
+    setFoundClient(null)
+  }
 
   const canConfirm = true
 
@@ -31,7 +54,7 @@ export default function PaymentModal({ items, total, onConfirm, onClose }: Props
     color: 'var(--text)', fontSize: 14,
   }
 
-return (
+  return (
     <div style={{
       position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100,
@@ -82,10 +105,7 @@ return (
               <input
                 type="number" value={tableNumber} onChange={e => setTableNumber(e.target.value)}
                 placeholder="Ex: 5"
-                style={{
-                  width: '100%', padding: '8px 12px', borderRadius: 8,
-                  border: '1px solid var(--border)', background: 'var(--surface2)', color: 'var(--text)', fontSize: 14,
-                }}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface2)', color: 'var(--text)', fontSize: 14 }}
               />
             </div>
           )}
@@ -95,10 +115,7 @@ return (
               <input
                 type="text" value={customerName} onChange={e => setCustomerName(e.target.value)}
                 placeholder="Ex: Dupont"
-                style={{
-                  width: '100%', padding: '8px 12px', borderRadius: 8,
-                  border: '1px solid var(--border)', background: 'var(--surface2)', color: 'var(--text)', fontSize: 14,
-                }}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface2)', color: 'var(--text)', fontSize: 14 }}
               />
             </div>
           )}
@@ -112,6 +129,34 @@ return (
             display: 'flex', flexDirection: 'column', gap: 10,
           }}>
             <div style={{ fontSize: 13, color: 'var(--accent)', fontWeight: 600, marginBottom: 2 }}>🛵 Adresse de livraison</div>
+
+            {/* Téléphone EN PREMIER pour déclencher la recherche */}
+            <div>
+              <label style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4, display: 'block' }}>Numéro de téléphone</label>
+              <input type="tel" value={telephone} onChange={e => setTelephone(e.target.value)}
+                placeholder="Ex: 06 12 34 56 78" style={fieldStyle} />
+            </div>
+
+            {/* Bannière client trouvé */}
+            {foundClient && (
+              <div style={{
+                padding: '10px 14px', borderRadius: 10,
+                background: 'rgba(34,197,94,0.15)', border: '1px solid #22c55e',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#22c55e' }}>✓ Client connu</div>
+                  <div style={{ fontSize: 12, color: 'var(--text)', marginTop: 2 }}>
+                    {foundClient.name && <span style={{ fontWeight: 600 }}>{foundClient.name} — </span>}
+                    {foundClient.adresse}{foundClient.ville ? `, ${foundClient.ville}` : ''}
+                  </div>
+                </div>
+                <button onClick={() => fillFromClient(foundClient)} style={{
+                  padding: '6px 12px', borderRadius: 8, border: 'none',
+                  background: '#22c55e', color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 700,
+                }}>Remplir ↓</button>
+              </div>
+            )}
 
             <div>
               <label style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4, display: 'block' }}>Adresse</label>
@@ -137,12 +182,6 @@ return (
               <input type="text" value={interphone} onChange={e => setInterphone(e.target.value)}
                 placeholder="Ex: B245 ou sonner Dupont" style={fieldStyle} />
             </div>
-
-            <div>
-              <label style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4, display: 'block' }}>Numéro de téléphone</label>
-              <input type="tel" value={telephone} onChange={e => setTelephone(e.target.value)}
-                placeholder="Ex: 06 12 34 56 78" style={fieldStyle} />
-            </div>
           </div>
         )}
 
@@ -159,7 +198,6 @@ return (
             ))}
           </div>
         </div>
-
 
         {/* Boutons */}
         <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>

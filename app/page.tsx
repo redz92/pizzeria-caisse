@@ -6,7 +6,7 @@ import { CartItem, Order, OrderStatus, PaymentMethod, OrderType, Category, MenuI
 import { getEffectivePrice } from '../data/utils'
 import PaymentModal from '../components/PaymentModal'
 import ReceiptModal from '../components/ReceiptModal'
-import { dbSaveOrder, dbGetTodayOrders, dbGetNextOrderNumber } from '../lib/db'
+import { dbSaveOrder, dbGetTodayOrders, dbGetNextOrderNumber, dbUpsertClient, dbFindClientByPhone } from '../lib/db'
 
 export default function CaissePage() {
   const [cart, setCart] = useState<CartItem[]>([])
@@ -129,6 +129,23 @@ export default function CaissePage() {
       change: method === 'especes' ? cashGiven - total : 0,
     }
     await dbSaveOrder(order)
+
+    // Sauvegarde automatique du client si livraison avec téléphone
+    if (type === 'livraison' && deliveryAddress?.telephone) {
+      try {
+        const existing = await dbFindClientByPhone(deliveryAddress.telephone)
+        await dbUpsertClient({
+          id: existing?.id || `client-${Date.now()}`,
+          name: customerName || existing?.name || '',
+          phone: deliveryAddress.telephone,
+          adresse: deliveryAddress.adresse,
+          ville: deliveryAddress.ville,
+          codePostal: deliveryAddress.codePostal,
+          interphone: deliveryAddress.interphone,
+        })
+      } catch (e) { console.error('Erreur sauvegarde client:', e) }
+    }
+
     setLastOrder(order)
     setCart([])
     setShowPayment(false)
